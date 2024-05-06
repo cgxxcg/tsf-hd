@@ -12,22 +12,22 @@ def main():
         description="[Informer] Long Sequences Forecasting"
     )
 
-    parser.add_argument("--data", type=str, required=True, default="ETTh1", help="data")
+    parser.add_argument("--data", type=str, required=True, default="ohio", help="data") #ETTh1 #used in data_parser
     parser.add_argument(
         "--root_path",
         type=str,
-        default="./data/ETT/",
+        default="./data/processedcsv/", #./data/ETT/
         help="root path of the data file",
     )
-    parser.add_argument("--data_path", type=str, default="ETTh1.csv", help="data file")
+    parser.add_argument("--data_path", type=str, default="ohio.csv", help="data file")  #ETTh1.csv
 
     parser.add_argument(
-        "--target", type=str, default="OT", help="target feature in S or MS task"
+        "--target", type=str, default="CGM", help="target feature in S or MS task" #OT
     )
     parser.add_argument(
         "--freq",
         type=str,
-        default="h",
+        default="m", #h, we update every 5 minutes 
         help="freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h",
     )
 
@@ -52,14 +52,15 @@ def main():
     parser.add_argument(
         "--features",
         type=str,
-        default="M",
+        default="S",  #M
         help="forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate",
     )
     # parser.add_argument('--inverse', action='store_true', help='inverse output data', default=False)
     parser.add_argument(
         "--cols",
         type=str,
-        nargs="+",
+        nargs="+", #allows multiple features to be input
+        default = "Time", #newly added
         help="certain cols from the data files as the input features",
     )
 
@@ -75,7 +76,7 @@ def main():
         "--devices", type=str, default="0,1,2,3", help="device ids of multile gpus"
     )
     parser.add_argument(
-        "--method", type=str, default="seq2seq-HDC", help="choose seq2seq-HDC or AR-HDC"
+        "--method", type=str, default="AR-HDC", help="choose seq2seq-HDC or AR-HDC" #seq2seq-HDC
     )
     parser.add_argument(
         "--learning_rate",
@@ -100,6 +101,13 @@ def main():
         args.gpu = args.device_ids[0]
 
     data_parser = {
+        "ohio":{
+            "data": "ohio.csv",  
+            "T": "CGM",
+            "M": [7, 7, 7],
+            "S": [1, 1, 1],
+            "MS": [7, 7, 1],
+        },
         "ETTh1": {
             "data": "ETTh1.csv",
             "T": "OT",
@@ -148,9 +156,9 @@ def main():
         "Illness": {"data": "national_illness.csv", "T": "OT", "M": [7, 7, 7]},
     }
     if args.data in data_parser.keys():
-        data_info = data_parser[args.data]
-        args.data_path = data_info["data"]
-        args.target = data_info["T"]
+        data_info = data_parser[args.data]  #ohio
+        args.data_path = data_info["data"] #ohio.csv
+        args.target = data_info["T"]  #CGM
 
         # Exp = Exp_TS2VecSupervised
     Exps = {"seq2seq-HDC": ExpSeq2SeqHD, "AR-HDC": ExpARHD}

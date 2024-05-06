@@ -62,7 +62,6 @@ class MultivariateARModel(nn.Module):
 
         Returns:
             Tensor: The output tensor.
-
         """
         h = self.encode(x_seq)
         h = self.query(h)
