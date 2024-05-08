@@ -23,11 +23,11 @@ class Dataset_ohio(Dataset):
         flag="train",
         size=None,
         features="S",  #single/univariate task
-        data_path="ohio.csv",
+        data_path="ohio540.csv",
         target="CGM",
         scale=False,
         inverse=False,
-        timeenc=0,  #don't know what is is 
+        timeenc=0,  #time features
         freq="t",   
         cols=None,
     ):
@@ -52,12 +52,13 @@ class Dataset_ohio(Dataset):
         self.inverse = inverse
         self.timeenc = timeenc
         self.freq = freq
-
         self.root_path = root_path
         self.data_path = data_path
+        self.flag = flag
         self.__read_data__()
 
     def __read_data__(self):
+
         self.scaler = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.root_path, self.data_path))
 
@@ -65,6 +66,8 @@ class Dataset_ohio(Dataset):
         # border2s = [12*30*24*4, 12*30*24*4+4*30*24*4, 12*30*24*4+8*30*24*4]
         border1s = [0, 4 * 30 * 24 - self.seq_len, 5 * 30 * 24 - self.seq_len] #3 borders: split to two chunks based on row (time)
         border2s = [4 * 30 * 24, 5 * 30 * 24, 20 * 30 * 24]
+        print("border1s",border1s) #[0, 2784, 3504]
+        print("border2s", border2s) #[2880, 3600, 14400]
 
         border1 = border1s[self.set_type] #set_type = 0,1,2 train test val
         border2 = border2s[self.set_type]
@@ -85,7 +88,7 @@ class Dataset_ohio(Dataset):
         if self.timeenc == 2:
             train_df_stamp = df_raw[["Time"]][border1s[0] : border2s[0]]  #[["date"]] 
             train_df_stamp["Time"] = pd.to_datetime(train_df_stamp.Time, format="%d-%b-%Y %H:%M:%S") #pd.to_datetime(train_df_stamp.date)
-            train_date_stamp = time_features(train_df_stamp, timeenc=self.timeenc)
+            train_date_stamp = time_features(train_df_stamp, timeenc=self.timeenc, freq=self.freq)
             date_scaler = sklearn_StandardScaler().fit(train_date_stamp)
 
             df_stamp = df_raw[["Time"]][border1:border2] #choose a segment from Time col
@@ -93,7 +96,7 @@ class Dataset_ohio(Dataset):
             data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
             data_stamp = date_scaler.transform(data_stamp)
         else:
-            df_stamp = df_raw[["Time"]][border1:border2]
+            df_stamp = df_raw[["Time"]][border1:border2] #0,2880
             df_stamp["Time"] = pd.to_datetime(df_stamp.Time, format="%d-%b-%Y %H:%M:%S") #pd.to_datetime(df_stamp.date)
             data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
 
@@ -102,6 +105,8 @@ class Dataset_ohio(Dataset):
             self.data_y = df_data.values[border1:border2]
         else:
             self.data_y = data[border1:border2]
+            print("border1", border1) #3504
+            print("border2", border2)  #14400
         self.data_stamp = data_stamp
 
     def __getitem__(self, index):
