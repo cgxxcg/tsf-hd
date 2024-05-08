@@ -8,10 +8,18 @@ def cumavg(m):
 
 def RSE(pred, true):
     if np.var(true)>0:
+        # print("1")
+        # print(pred)
+        # print(type(pred))
+        # input()
         return np.sqrt(np.sum((true - pred) ** 2)) / np.sqrt(
             np.sum((true - true.mean()) ** 2)
         )
     else:
+        # print("2")
+        # print(pred)
+        # print(type(pred))
+        # input()
         return np.sqrt(np.sum((true - pred) ** 2))
 
 

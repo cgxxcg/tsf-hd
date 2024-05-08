@@ -169,23 +169,31 @@ def time_features(dates, timeenc=1, freq="h"):
             "t": ["month", "day", "weekday", "hour", "minute"],
         }
         return dates[freq_map[freq.lower()]].values
-    if timeenc == 1:
-        dates = pd.to_datetime(dates.date.values)
+    if timeenc == 1: #ohio540
+        dates = pd.to_datetime(dates['Time'].values, format="%d-%b-%Y %H:%M:%S") #(dates.date.values, format="%d-%b-%Y %H:%M:%S")
         return np.vstack(
             [feat(dates) for feat in time_features_from_frequency_str(freq)]
         ).transpose(1, 0)
 
     if timeenc == 2:
-        dt = pd.to_datetime(dates.date.values)
-        return np.stack(
-            [
-                dt.minute.to_numpy(),
-                dt.hour.to_numpy(),
-                dt.dayofweek.to_numpy(),
-                dt.day.to_numpy(),
-                dt.dayofyear.to_numpy(),
-                dt.month.to_numpy(),
-                dt.month.to_numpy(),
-            ],
-            axis=1,
-        ).astype(np.float32)
+        dt = pd.to_datetime(dates['Time'].values, format="%d-%b-%Y %H:%M:%S") #(dates.date.values)
+        return np.stack([
+    dt.minute.to_numpy().reshape(-1, 1),   # Minute
+    dt.hour.to_numpy().reshape(-1, 1),     # Hour
+    dt.dayofweek.to_numpy().reshape(-1, 1),# Day of the week (Monday=0, Sunday=6)
+    dt.day.to_numpy().reshape(-1, 1),      # Day of the month
+    dt.dayofyear.to_numpy().reshape(-1, 1),# Day of the year
+    dt.month.to_numpy().reshape(-1, 1),    # Month
+    dt.year.to_numpy().reshape(-1, 1),     # Year
+    ], axis=1).astype(np.float32)
+        
+    #     return 
+    # np.stack([
+    #             dt.minute.to_numpy(),
+    #             dt.hour.to_numpy(),
+    #             dt.dayofweek.to_numpy(),
+    #             dt.day.to_numpy(),
+    #             dt.dayofyear.to_numpy(),
+    #             dt.month.to_numpy(),
+    #             dt.month.to_numpy(),
+    #         ], axis=1).astype(np.float32)
