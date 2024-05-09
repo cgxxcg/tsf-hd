@@ -155,11 +155,7 @@ class ExpARHD(Exp_Basic):
 
         elif mode == "test":
             x_seq = torch.Tensor(data[idx - self.args.seq_len : idx, :]).to(self.device)
-            #print("_process_one_batch x_seq test",x_seq)
-           
-            
-            
-        
+
             # Prediction
             Y_true = torch.zeros((self.args.pred_len, data.shape[1]))
             Y_pred = torch.zeros((self.args.pred_len, data.shape[1]))
@@ -184,7 +180,6 @@ class ExpARHD(Exp_Basic):
                # print("x_seq new in process1batch test", x_seq)
                 
                 loss = self._select_criterion()(y_tilda.view(-1), y)
-              #  print("loss",loss)
 
                 # Add regularization :
                 l2_reg = torch.tensor(0.0).to(self.device)
