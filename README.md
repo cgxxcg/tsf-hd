@@ -1,6 +1,8 @@
 # TSF-OHIO
 The current code is running based on a patient's data (ID=540) in the Ohio dataset.  
 
+You should have a subdirectory called "processedcsv" with "ohio540.csv" in it. 
+
 To run the code:
 
 ```python main.py --data ohio540```
