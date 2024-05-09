@@ -1,3 +1,32 @@
+# TSF-OHIO
+The current code is running based on a patient's data (ID=540) in the Ohio dataset.  
+
+To run the code:
+
+```python main.py --data ohio540```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # TSF-HD
 
 [![Python](https://img.shields.io/badge/Python-3.10.12-blue.svg)](https://www.python.org/downloads/release/python-31012/)
