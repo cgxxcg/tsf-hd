@@ -36,7 +36,7 @@ class ExpARHD(Exp_Basic):
 
     def _get_data(self, flag):
         args = self.args
-
+        print("ExpARHD parameters: \n",args)
         data_dict_ = {
             "ohio540": Dataset_ohio,
             "ETTh1": Dataset_ETT_hour,
@@ -49,8 +49,10 @@ class ExpARHD(Exp_Basic):
             "S-A": Dataset_Custom,
             "custom": Dataset_Custom,
         }
+        
         data_dict = defaultdict(lambda: Dataset_Custom, data_dict_)
         Data = data_dict[self.args.data]
+        
         timeenc = 1 #for ohio
 
         freq = args.freq
@@ -68,7 +70,7 @@ class ExpARHD(Exp_Basic):
             freq=freq,
             cols=args.cols,
         )
-        print(flag, len(data_set))
+        #print(flag, len(data_set))
 
         return data_set
 
@@ -81,17 +83,17 @@ class ExpARHD(Exp_Basic):
 
     def train(self):
         tau, Ts = self.args.pred_len, self.args.seq_len
-        print("tau", tau) #24
-        print("Ts", Ts) #96
+        # print("tau", tau) #24
+        # print("Ts", Ts) #96
 
         train_data: np.ndarray = self._get_data(flag="train").data_x
-        print("train_data in exparhd", train_data) #2d array 
         self._select_optimizer()
         for i in tqdm(range(Ts, train_data.shape[0] - tau, 1)):
             self._process_one_batch(train_data, i, mode="train")
 
     def test(self):
         test_data: np.ndarray = self._get_data(flag="test").data_x
+        #print("testdata in test method exp\n", test_data) still has value 
 
         preds = []
         trues = []
@@ -102,7 +104,7 @@ class ExpARHD(Exp_Basic):
                 test_data.shape[0] - self.args.pred_len,
                 self.args.pred_len,
             )
-        ):
+        ):  
             pred, true = self._process_one_batch(test_data, i, mode="test")
             preds.append(pred.detach().cpu())
             trues.append(true.detach().cpu())
@@ -124,6 +126,7 @@ class ExpARHD(Exp_Basic):
     def _process_one_batch(
         self, data: np.ndarray, idx: int, mode: str
     ) -> Optional[Tuple[torch.Tensor, torch.Tensor]]:
+        
         if mode == "train":
             x_seq = torch.Tensor(data[idx - self.args.seq_len : idx, :]).to(self.device)
             
@@ -152,7 +155,11 @@ class ExpARHD(Exp_Basic):
 
         elif mode == "test":
             x_seq = torch.Tensor(data[idx - self.args.seq_len : idx, :]).to(self.device)
-            #print("_process_one_batch",x_seq)
+            #print("_process_one_batch x_seq test",x_seq)
+           
+            
+            
+        
             # Prediction
             Y_true = torch.zeros((self.args.pred_len, data.shape[1]))
             Y_pred = torch.zeros((self.args.pred_len, data.shape[1]))
@@ -166,7 +173,7 @@ class ExpARHD(Exp_Basic):
                 x_seq = torch.cat((x_seq, y_tilda.detach()))[1:, :]
                 Y_true[j] = y.detach()
                 Y_pred[j] = y_tilda.detach()
-
+            
             # Update
             x_seq = torch.Tensor(data[idx - self.args.seq_len : idx, :]).to(self.device)
             for j in range(self.args.pred_len):
