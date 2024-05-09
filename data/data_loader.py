@@ -1,7 +1,8 @@
 import os
 import warnings
+import copy
 
-
+import data.missing_CGM_data_filling as missing_CGM
 from torch.utils.data import Dataset, DataLoader
 
 
@@ -15,6 +16,7 @@ from utils.timefeatures import time_features
 from utils.tools import StandardScaler
 
 warnings.filterwarnings("ignore")
+
 
 class Dataset_ohio(Dataset):
     def __init__(
@@ -60,14 +62,15 @@ class Dataset_ohio(Dataset):
     def __read_data__(self):
 
         self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.root_path, self.data_path))
+        full_path = os.path.join(self.root_path, self.data_path)
+        df_raw = pd.read_csv(full_path)
 
         # border1s = [0, 12*30*24*4 - self.seq_len, 12*30*24*4+4*30*24*4 - self.seq_len]
         # border2s = [12*30*24*4, 12*30*24*4+4*30*24*4, 12*30*24*4+8*30*24*4]
         border1s = [0, 4 * 30 * 24 - self.seq_len, 5 * 30 * 24 - self.seq_len] #3 borders: split to two chunks based on row (time)
         border2s = [4 * 30 * 24, 5 * 30 * 24, 20 * 30 * 24]
-        print("border1s",border1s) #[0, 2784, 3504]
-        print("border2s", border2s) #[2880, 3600, 14400]
+        # print("border1s",border1s) #[0, 2784, 3504]
+        # print("border2s", border2s) #[2880, 3600, 14400]
 
         border1 = border1s[self.set_type] #set_type = 0,1,2 train test val
         border2 = border2s[self.set_type]
@@ -75,8 +78,25 @@ class Dataset_ohio(Dataset):
         if self.features == "M" or self.features == "MS":
             cols_data = df_raw.columns[1:]
             df_data = df_raw[cols_data]
+            #newly added: preprocess data
+            df_data = missing_CGM.remove_nan_strat_end(df_data, 'CGM')
+            df_data = df_data.fillna(0)
+            bgorg = copy.deepcopy(df_data['CGM'])
+            #fill in CGM
+            df_data['CGM'] = missing_CGM.filling_CGM(df_data)
+            
+            
+        #ohio: (single variable-S)
         elif self.features == "S":
             df_data = df_raw[[self.target]] #yes, select a single column (CGM)
+            #newly added: preprocess data
+            df_data = missing_CGM.remove_nan_strat_end(df_data, 'CGM')
+            df_data = df_data.fillna(0)
+            # bgorg = copy.deepcopy(df_data['CGM'])
+            
+            #fill in CGM with 1
+            df_data['CGM'] = missing_CGM.filling_CGM(df_data) #type:Series
+            
 
         if self.scale:
             train_data = df_data[border1s[0] : border2s[0]]
@@ -84,7 +104,7 @@ class Dataset_ohio(Dataset):
             data = self.scaler.transform(df_data.values)
         else:
             data = df_data.values  #data = all CGM values
-
+        
         if self.timeenc == 2:
             train_df_stamp = df_raw[["Time"]][border1s[0] : border2s[0]]  #[["date"]] 
             train_df_stamp["Time"] = pd.to_datetime(train_df_stamp.Time, format="%d-%b-%Y %H:%M:%S") #pd.to_datetime(train_df_stamp.date)
@@ -96,19 +116,23 @@ class Dataset_ohio(Dataset):
             data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
             data_stamp = date_scaler.transform(data_stamp)
         else:
-            df_stamp = df_raw[["Time"]][border1:border2] #0,2880
+            df_stamp = df_raw[["Time"]][border1:border2] #[0:2880]
+            # print("dfstamp before\n", df_stamp.tail(5))
             df_stamp["Time"] = pd.to_datetime(df_stamp.Time, format="%d-%b-%Y %H:%M:%S") #pd.to_datetime(df_stamp.date)
+           # print("dfstamp todatetime\n", df_stamp.tail(5))
             data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
+            
 
-        self.data_x = data[border1:border2]
+
+        self.data_x = data[border1:border2] #[0:2880]
+        
         if self.inverse:
-            self.data_y = df_data.values[border1:border2]
+            self.data_y = df_data.values[border1:border2]  #[0:2880]
         else:
-            self.data_y = data[border1:border2]
-            print("border1", border1) #3504
-            print("border2", border2)  #14400
-        self.data_stamp = data_stamp
+            self.data_y = data[border1:border2] #[0:2880]
 
+        self.data_stamp = data_stamp
+        
     def __getitem__(self, index):
         s_begin = index
         s_end = s_begin + self.seq_len
@@ -453,8 +477,11 @@ class Dataset_Custom(Dataset):
             data = self.scaler.transform(df_data.values)
         else:
             data = df_data.values
+            
 
         df_stamp = df_raw[["date"]][border1:border2]
+        
+        
         df_stamp["date"] = pd.to_datetime(df_stamp.date)
         data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=self.freq)
 
