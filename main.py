@@ -12,22 +12,22 @@ def main():
         description="[Informer] Long Sequences Forecasting"
     )
 
-    parser.add_argument("--data", type=str, required=True, default="ohio", help="data") #ETTh1 #used in data_parser
+    parser.add_argument("--data", type=str, required=True, default="ohio", help="data") # used in data_parser
     parser.add_argument(
         "--root_path",
         type=str,
-        default="./data/processedcsv/", #./data/ETT/
+        default="./data/processedcsv/", 
         help="root path of the data file",
     )
-    parser.add_argument("--data_path", type=str, default="ohio.csv", help="data file")  #ETTh1.csv
+    parser.add_argument("--data_path", type=str, default="ohio540.csv", help="data file")  
 
     parser.add_argument(
-        "--target", type=str, default="CGM", help="target feature in S or MS task" #OT
+        "--target", type=str, default="CGM", help="target feature in S or MS task" #
     )
     parser.add_argument(
         "--freq",
         type=str,
-        default="m", #h, we update every 5 minutes 
+        default="t", # use 'm'inute since CGM updates every 5 minutes 
         help="freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h",
     )
 
@@ -38,7 +38,7 @@ def main():
         help="input sequence length of Informer encoder",
     )
     parser.add_argument(
-        "--pred_len", type=int, default=24, help="prediction sequence length"
+        "--pred_len", type=int, default=6, help="prediction sequence length/forecast window"
     )
     parser.add_argument(
         "--hvs_len", type=int, default=24, help="dimension of the hypervectors"
@@ -101,8 +101,8 @@ def main():
         args.gpu = args.device_ids[0]
 
     data_parser = {
-        "ohio":{
-            "data": "ohio.csv",  
+        "ohio540":{
+            "data": "ohio540.csv",  
             "T": "CGM",
             "M": [7, 7, 7],
             "S": [1, 1, 1],
@@ -156,13 +156,13 @@ def main():
         "Illness": {"data": "national_illness.csv", "T": "OT", "M": [7, 7, 7]},
     }
     if args.data in data_parser.keys():
-        data_info = data_parser[args.data]  #ohio
-        args.data_path = data_info["data"] #ohio.csv
-        args.target = data_info["T"]  #CGM
+        data_info = data_parser[args.data]  # data_parser[ohio540]
+        args.data_path = data_info["data"]  # ohio540.csv
+        args.target = data_info["T"]        # CGM
 
-        # Exp = Exp_TS2VecSupervised
+   # pass in args and call model
     Exps = {"seq2seq-HDC": ExpSeq2SeqHD, "AR-HDC": ExpARHD}
-    Exp = Exps[args.method]
+    Exp = Exps[args.method] #AR-HDC for ohio
     metrics, preds, true, corr, rse = [], [], [], [], []
 
     low = 0

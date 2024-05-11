@@ -70,8 +70,6 @@ class ExpARHD(Exp_Basic):
             freq=freq,
             cols=args.cols,
         )
-        #print(flag, len(data_set))
-
         return data_set
 
     def _select_optimizer(self):
@@ -82,10 +80,7 @@ class ExpARHD(Exp_Basic):
         return nn.HuberLoss()
 
     def train(self):
-        tau, Ts = self.args.pred_len, self.args.seq_len
-        # print("tau", tau) #24
-        # print("Ts", Ts) #96
-
+        tau, Ts = self.args.pred_len, self.args.seq_len  #tau = 6 for ohio
         train_data: np.ndarray = self._get_data(flag="train").data_x
         self._select_optimizer()
         for i in tqdm(range(Ts, train_data.shape[0] - tau, 1)):
@@ -93,8 +88,6 @@ class ExpARHD(Exp_Basic):
 
     def test(self):
         test_data: np.ndarray = self._get_data(flag="test").data_x
-        #print("testdata in test method exp\n", test_data) still has value 
-
         preds = []
         trues = []
         rses, corrs = [], []
@@ -123,6 +116,9 @@ class ExpARHD(Exp_Basic):
         print(f"rse:{rse}, corr:{corr}")
         return [rse, corr], RSE, CORR, preds, trues
 
+
+
+    # train / test happens here 
     def _process_one_batch(
         self, data: np.ndarray, idx: int, mode: str
     ) -> Optional[Tuple[torch.Tensor, torch.Tensor]]:
@@ -134,18 +130,14 @@ class ExpARHD(Exp_Basic):
             for j in range(self.args.pred_len):
                 y = torch.Tensor(data[idx + j, :]).to(self.device)
                 y_tilda = self.model(x_seq).T
-                
-               # print("y_tilda in process1batch train", y_tilda)
-                
                 x_seq = torch.cat((x_seq, y_tilda.detach()))[1:, :]
-           
-                
                 loss = self._select_criterion()(y_tilda.view(-1), y)
 
                 # Add regularization :
                 l2_reg = torch.tensor(0.0).to(self.device)
                 for param in self.model.parameters():
                     l2_reg += torch.norm(param) ** 2
+                    
                 # L2 regularization to the loss
                 loss += self.args.l2_lambda * l2_reg
 
@@ -153,19 +145,15 @@ class ExpARHD(Exp_Basic):
                 loss.backward()
                 self.opt.step()
 
+
         elif mode == "test":
             x_seq = torch.Tensor(data[idx - self.args.seq_len : idx, :]).to(self.device)
-
             # Prediction
             Y_true = torch.zeros((self.args.pred_len, data.shape[1]))
             Y_pred = torch.zeros((self.args.pred_len, data.shape[1]))
             for j in range(self.args.pred_len):
                 y = torch.Tensor(data[idx + j, :]).to(self.device)
-                
                 y_tilda = self.model(x_seq).T
-                #print("y_tilda in process1batch test", y_tilda)
-                
-                
                 x_seq = torch.cat((x_seq, y_tilda.detach()))[1:, :]
                 Y_true[j] = y.detach()
                 Y_pred[j] = y_tilda.detach()
@@ -177,14 +165,10 @@ class ExpARHD(Exp_Basic):
                 y_tilda = self.model(x_seq).T
                 
                 x_seq = torch.cat((x_seq, y_tilda.detach()))[1:, :]
-               # print("x_seq new in process1batch test", x_seq)
-                
                 loss = self._select_criterion()(y_tilda.view(-1), y)
 
                 # Add regularization :
                 l2_reg = torch.tensor(0.0).to(self.device)
-                
-               # print("l2_reg", l2_reg)
                 
                 for param in self.model.parameters():
                     l2_reg += torch.norm(param) ** 2

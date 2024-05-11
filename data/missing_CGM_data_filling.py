@@ -20,27 +20,26 @@ def remove_nan_strat_end(df, attr):
         print("Preprocessing: Remove nan successfully!")
         return df
     else:
-        print('没有该属性，无法删除\n')
+        print('Unable to remove: No Attibutes Found\n')
         return 0
 
 
+# fill in nan values with "1"
+# TODO: use average value to fill in missing CGMs 
 def filling_CGM(testpath):
-    #print('CGM filling:', testpath)
-    #print("testpath type: ", type(testpath)) #df
     filepath = "./data/processedcsv/ohio540.csv"
     a_test = pd.read_csv(filepath, usecols=['CGM'])
-    a_test = remove_nan_strat_end(a_test, 'CGM')  # 去掉首尾空行
-    
-   # print("a_test shape", a_test.shape) #(16175, 1)
-    M, N = a_test.shape # M = 16175, N =1 
+    a_test = remove_nan_strat_end(a_test, 'CGM')  
+    M, N = a_test.shape           # M = 16175, N =1 
     AA = a_test['CGM'].fillna(1)
-    # print("AA type", type(AA)) #Series
-    # print("AA shape", AA.shape) #(16175,)
     return AA
     
     
     
-    # # AA[AA > 1] = 0 #??????? why
+    
+    
+    # Original code with normalization 
+    # # AA[AA > 1] = 0 
     # AA = np.array(AA).reshape((-1, 1)) #ensure AA is only 1 col
     # a_test = np.array(a_test)
     # zero = np.zeros(M).reshape((-1, 1))

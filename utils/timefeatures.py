@@ -169,14 +169,16 @@ def time_features(dates, timeenc=1, freq="h"):
             "t": ["month", "day", "weekday", "hour", "minute"],
         }
         return dates[freq_map[freq.lower()]].values
-    if timeenc == 1: #ohio540
-        dates = pd.to_datetime(dates['Time'].values, format="%d-%b-%Y %H:%M:%S") #(dates.date.values, format="%d-%b-%Y %H:%M:%S")
+    
+    
+    if timeenc == 1: # ohio540
+        dates = pd.to_datetime(dates['Time'].values, format="%d-%b-%Y %H:%M:%S") 
         return np.vstack(
             [feat(dates) for feat in time_features_from_frequency_str(freq)]
         ).transpose(1, 0)
 
     if timeenc == 2:
-        dt = pd.to_datetime(dates['Time'].values, format="%d-%b-%Y %H:%M:%S") #(dates.date.values)
+        dt = pd.to_datetime(dates['Time'].values, format="%d-%b-%Y %H:%M:%S") 
         return np.stack([
     dt.minute.to_numpy().reshape(-1, 1),   # Minute
     dt.hour.to_numpy().reshape(-1, 1),     # Hour
